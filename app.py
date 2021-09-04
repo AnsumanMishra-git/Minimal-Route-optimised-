@@ -3,7 +3,7 @@ from math import cos, asin, sqrt
 import streamlit as st
 import base64
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2 import service_account
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
 
 
@@ -20,12 +20,14 @@ st.write("""
 
 
         """)
-scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
-         "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-
 
 # Assign credentials ann path of style sheet
-creds = ServiceAccountCredentials.from_json_keyfile_name(st.secrets["path"], scope)
+creds = service_account.Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"],
+    scopes=["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
+         "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"],
+)
+
 client = gspread.authorize(creds)
 sheet = client.open('MERGED').sheet1
 
