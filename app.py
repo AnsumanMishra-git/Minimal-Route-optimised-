@@ -5,13 +5,12 @@ import base64
 import gspread
 from google.oauth2 import service_account
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
+import geocoder
 
 
-
+    
 st.write("""
 # Minimum Route for The SalesPerson
-This app finds the **minimum route** that the sales person should follow inorder to minimize the travel cost ,
-keeping in mind that he can travel to only num stores a day.
 
 **NOTE :** The distance is calculated using **Haversine Formula** which may vary from the actual distance.
 
@@ -56,7 +55,6 @@ def update_data():
 with st.spinner(text="Please wait , Fetching the Data..."):
     df = pd.DataFrame(sheet.get_all_records())
 
-
 def load_data(view):
     if view=='Minimal Route Finder':
         return df[df['Blacklisted']==0]
@@ -91,17 +89,27 @@ st.sidebar.header('User Input Features')
 view=['Minimal Route Finder','Visited','Blacklisted']
 selected_view = st.sidebar.selectbox('View', view)
 
-
+with st.spinner(text="Fetching Your Coordinates..."):
+    g = geocoder.ip('me')
+    my_lat = g.latlng[0]
+    my_lon = g.latlng[1]
+    
 st.header('Enter coordinates of your starting point')
-lat_input = 13.945281
-latitude = st.text_area("Latitude input", lat_input, height=25)
+coord = "13.945281,77.7364"
+coordinate = st.text_area("Enter latitude and longitude separated by a comma. Eg: 13.945281,77.7364 ", coord, height=25)
+coordinates=coord.split(',')
+latitude=float(coordinates[0])
+longitude=float(coordinates[1])
 
+st.subheader('Click below if you dont know the coordinates of your current location ')
+if st.checkbox('Get my current location'):
+    latitude=my_lat
+    longitude=my_lon
+    
+    
 st.write("""
 
 """)
-
-lon_input = 77.7364
-longitude = st.text_area("longitude input", lon_input, height=25)
 
 selected_data = load_data(selected_view)
 selected_data=selected_data.sort_values(by=['Latitude','Longitude'])
@@ -123,9 +131,11 @@ if selected_view=='Minimal Route Finder':
     st.header('Enter the number of trips per day you want')
     tpd = 12
     num = int(st.text_area("trips per day", tpd, height=25))
-
+    
+    selected_loc = st.sidebar.text_area('Search By Location', height=20)  
+    
     sorted_unique_type = sorted(selected_data.Type.unique())
-    selected_type = st.sidebar.multiselect('Type', sorted_unique_type)
+    selected_type = st.sidebar.multiselect('Search By Type', sorted_unique_type)
 
     sorted_unique_name = selected_data.Name.unique()
     selected_name = st.sidebar.multiselect('Blacklist Names', sorted_unique_name)
@@ -139,15 +149,25 @@ if selected_view=='Minimal Route Finder':
         st.session_state.Bindex=[]
 
     # Filtering data
-    df_selected_type = selected_data[(selected_data.Type.isin(selected_type)) & ~(selected_data.Name.isin(selected_name))]
+    df1 = selected_data[(selected_data.Type.isin(selected_type)) & ~(selected_data.Name.isin(selected_name))]
+    df1=df1.reset_index(drop=True)
+    df1['Marked']=0
+    
+    loc_list=[]
+    for i in range(0,len(df1)):
+        if (str(df1['Address'][i]).find(selected_loc) != -1):
+            loc_list.append(df1['Address'][i])
+            
+    df_selected_type=df1[df1.Address.isin(loc_list)]
     df_selected_type=df_selected_type.reset_index(drop=True)
-    df_selected_type['Marked']=0
-
+    
     if len(df_selected_type)>1000:
         df_selected_type = df_selected_type[(df_selected_type['Latitude']>float(latitude)-0.85) & (df_selected_type['Latitude']<float(latitude)+0.85) &
                               (df_selected_type['Longitude']>float(longitude)-0.85) & (df_selected_type['Longitude']<float(longitude)+0.85)]
         df_selected_type=df_selected_type.reset_index(drop=True)
-
+    
+    
+    
     def distance(lat1, lon1, lat2, lon2):
         p = 0.017453292519943295 # conversion to radians factor
         a = 0.5 - cos((lat2-lat1)*p)/2 + cos(lat1*p)*cos(lat2*p) * (1-cos((lon2-lon1)*p)) / 2  #a = haversine
@@ -208,8 +228,11 @@ if selected_view=='Minimal Route Finder':
     st.write("""
 
                  """)
+
+    
+
     st.header('INPUT (Origin Location)')
-    st.write("Origin( " +str(latitude) + " , " + str(longitude) +" )")
+    st.write("Your Current Location( " +str(latitude) + " , " + str(longitude) +" )")
 
     #user_day='2'
     #day=2
