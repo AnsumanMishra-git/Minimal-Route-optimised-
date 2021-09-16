@@ -9,7 +9,7 @@ import geocoder
 from bokeh.models.widgets import Button
 from bokeh.models import CustomJS
 from streamlit_bokeh_events import streamlit_bokeh_events
-    
+import re
 st.write("""
 # Minimum Route for The SalesPerson
 
@@ -20,7 +20,11 @@ st.write("""
 
 
         """)
-        
+
+def clean(str):
+    str=re.sub(r'[^\w\s]', '', str.lower())
+    return str
+st.sidebar.subheader('User Input Features')
 
 # Assign credentials ann path of style sheet
 creds = service_account.Credentials.from_service_account_info(
@@ -54,8 +58,10 @@ def update_data():
                     st.session_state.Bindex=[]
     st.success("Done.")
 
-with st.spinner(text="Please wait , Fetching the Data..."):
-    df = pd.DataFrame(sheet.get_all_records())
+#with st.spinner(text="Please wait , Fetching the Data..."):
+#    df = pd.DataFrame(sheet.get_all_records())
+df=pd.read_csv('shortened - Sheet1 (1).csv')
+
 
 def load_data(view):
     if view=='Minimal Route Finder':
@@ -73,18 +79,17 @@ def filedownload(df,filename):
     href = f'<a href="data:file/csv;base64,{b64}" download={filename}>Download CSV File</a>'
     return href
 
-st.sidebar.subheader('Click Below if you want to reset all your progress.')
+st.sidebar.write('Click Below if you want to reset all your progress.')
 if st.sidebar.button('Reset'):
     reset_data()
 
-st.sidebar.subheader("Click below if you have confirmed all your trips !")
+st.sidebar.write("Click below if you have confirmed all your trips.")
 
 if st.sidebar.button('Update Sheet'):
     update_data()
 
 df['Marked']=0
 counts=df['Type'].value_counts()
-st.sidebar.subheader('User Input Features')
 view=['Minimal Route Finder','Visited','Blacklisted']
 selected_view = st.sidebar.selectbox('View', view)
 
@@ -102,7 +107,7 @@ result = streamlit_bokeh_events(
     events="GET_LOCATION",
     key="get_location",
     refresh_on_update=False,
-    override_height=75,
+    override_height=40,
     debounce_time=0)
 
 if result:
@@ -147,7 +152,8 @@ if selected_view=='Minimal Route Finder':
     tpd = 12
     num = int(st.text_area("trips per day", tpd, height=25))
     
-    selected_loc = st.sidebar.text_area('Search By Location', height=20)  
+    selected_loc = (st.sidebar.text_area('Search By Location', height=20))
+    selected_loc=clean(selected_loc)
     
     sorted_unique_type = sorted(selected_data.Type.unique())
     selected_type = st.sidebar.multiselect('Search By Type', sorted_unique_type)
@@ -168,9 +174,11 @@ if selected_view=='Minimal Route Finder':
     df1=df1.reset_index(drop=True)
     df1['Marked']=0
     
+    
     loc_list=[]
     for i in range(0,len(df1)):
-        if (str(df1['Address'][i]).find(selected_loc) != -1):
+        addr=clean(str(df1['Address'][i]))
+        if (addr.find(selected_loc) != -1):
             loc_list.append(df1['Address'][i])
             
     df_selected_type=df1[df1.Address.isin(loc_list)]
@@ -207,7 +215,6 @@ if selected_view=='Minimal Route Finder':
                  """)
 
 
-
     # display the index of the next num stores that he should go to
     d = pd.DataFrame()
     with st.spinner(text="Finding stores near you..."):
@@ -234,7 +241,7 @@ if selected_view=='Minimal Route Finder':
                 lon=df_selected_type['Longitude'][i]
                 d = d.append({"ID":df_selected_type['id'][i],"Company Name":df_selected_type['Name'][i],"Phone":df_selected_type['Phone'][i],
                               "Link":df_selected_type['Link'][i],"Address":df_selected_type['Address'][i],
-                                 "Pin Code":df_selected_type['Pincode'][i],"Distance":dist,
+                                 "Pin Code":int(float(df_selected_type['Pincode'][i])),"Distance":dist,
                              "Latitude":df_selected_type['Latitude'][i],"Longitude":df_selected_type['Longitude'][i],
                              "Visited":df_selected_type['Visited'][i],"Blacklisted":df_selected_type['Blacklisted'][i]},ignore_index=True)
 
@@ -263,7 +270,7 @@ if selected_view=='Minimal Route Finder':
             for  j in range(0,num):
                 if(j<len(display)):
                    st.session_state.Id.append(int(display['ID'][j]))
-            cols=['Address', 'Company Name', 'Distance', 'Link', 'Phone','Pin Code','Latitude','Longitude']
+            cols=['Address', 'Company Name', 'Distance', 'Link','Pin Code','Latitude','Longitude']
             st.dataframe(display[cols][0:num])
             st.markdown(filedownload(display[cols][0:num],"Minimal_Route.csv"), unsafe_allow_html=True)
             st.subheader("Detailed trip info -")
