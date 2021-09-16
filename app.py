@@ -6,8 +6,9 @@ import gspread
 from google.oauth2 import service_account
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
 import geocoder
-
-
+from bokeh.models.widgets import Button
+from bokeh.models import CustomJS
+from streamlit_bokeh_events import streamlit_bokeh_events
     
 st.write("""
 # Minimum Route for The SalesPerson
@@ -19,6 +20,7 @@ st.write("""
 
 
         """)
+        
 
 # Assign credentials ann path of style sheet
 creds = service_account.Credentials.from_service_account_info(
@@ -86,22 +88,38 @@ st.sidebar.subheader('User Input Features')
 view=['Minimal Route Finder','Visited','Blacklisted']
 selected_view = st.sidebar.selectbox('View', view)
 
-with st.spinner(text="Fetching Your Coordinates..."):
-    g = geocoder.ip('me')
-    my_lat = g.latlng[0]
-    my_lon = g.latlng[1]
-    
+st.subheader('Click below if you dont know the coordinates of your current location ')
+loc_button = Button(label="Get Location")
+loc_button.js_on_event("button_click", CustomJS(code="""
+    navigator.geolocation.getCurrentPosition(
+        (loc) => {
+            document.dispatchEvent(new CustomEvent("GET_LOCATION", {detail: {lat:loc.coords.latitude,lon:loc.coords.longitude}}))
+        }
+    )
+    """))
+result = streamlit_bokeh_events(
+    loc_button,
+    events="GET_LOCATION",
+    key="get_location",
+    refresh_on_update=False,
+    override_height=75,
+    debounce_time=0)
+
+if result:
+    if "GET_LOCATION" in result:
+        location=str(result["GET_LOCATION"]['lat'])+','+str(result["GET_LOCATION"]['lon'])
+        st.write('Your Location :')
+        st.write(location)
+        
 st.subheader('Enter coordinates of your starting point')
 coord = "13.945281,77.7364"
 coordinate = st.text_area("Enter latitude and longitude separated by a comma. Eg: 13.945281,77.7364 ", coord, height=25)
-coordinates=coord.split(',')
+coordinates=coordinate.split(',')
 latitude=float(coordinates[0])
 longitude=float(coordinates[1])
 
-st.subheader('Click below if you dont know the coordinates of your current location ')
-if st.checkbox('Get my current location'):
-    latitude=my_lat
-    longitude=my_lon
+        
+
     
     
 st.write("""
@@ -189,8 +207,7 @@ if selected_view=='Minimal Route Finder':
                  """)
 
 
-    #latitude  =13.945281
-    #longitude=77.7364
+
     # display the index of the next num stores that he should go to
     d = pd.DataFrame()
     with st.spinner(text="Finding stores near you..."):
