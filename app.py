@@ -58,9 +58,9 @@ def update_data():
                     st.session_state.Bindex=[]
     st.success("Done.")
 
-#with st.spinner(text="Please wait , Fetching the Data..."):
-#    df = pd.DataFrame(sheet.get_all_records())
-df=pd.read_csv('shortened - Sheet1 (1).csv')
+with st.spinner(text="Please wait , Fetching the Data..."):
+    df = pd.DataFrame(sheet.get_all_records())
+#=pd.read_csv('shortened - Sheet1 (1).csv')
 
 
 def load_data(view):
