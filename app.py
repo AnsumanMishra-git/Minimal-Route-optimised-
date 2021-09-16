@@ -152,11 +152,11 @@ if selected_view=='Minimal Route Finder':
     tpd = 12
     num = int(st.text_area("trips per day", tpd, height=25))
     
-    selected_loc = (st.sidebar.text_area('Search By Location', height=20))
-    selected_loc=clean(selected_loc)
-    
     sorted_unique_type = sorted(selected_data.Type.unique())
     selected_type = st.sidebar.multiselect('Search By Type', sorted_unique_type)
+
+    selected_loc = (st.sidebar.text_area('Search By Location', height=17))
+    selected_loc=clean(selected_loc)
 
     sorted_unique_name = selected_data.Name.unique()
     selected_name = st.sidebar.multiselect('Blacklist Names', sorted_unique_name)
