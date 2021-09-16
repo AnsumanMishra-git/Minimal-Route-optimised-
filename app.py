@@ -71,21 +71,18 @@ def filedownload(df,filename):
     href = f'<a href="data:file/csv;base64,{b64}" download={filename}>Download CSV File</a>'
     return href
 
-st.sidebar.header('Click Below if you want to reset all your progress.')
+st.sidebar.subheader('Click Below if you want to reset all your progress.')
 if st.sidebar.button('Reset'):
     reset_data()
 
-st.header("""
+st.sidebar.subheader("Click below if you have confirmed all your trips !")
 
-          Click below if you have confirmed all your trips !
-          """)
-
-if st.button('Update Sheet'):
+if st.sidebar.button('Update Sheet'):
     update_data()
 
 df['Marked']=0
 counts=df['Type'].value_counts()
-st.sidebar.header('User Input Features')
+st.sidebar.subheader('User Input Features')
 view=['Minimal Route Finder','Visited','Blacklisted']
 selected_view = st.sidebar.selectbox('View', view)
 
@@ -94,7 +91,7 @@ with st.spinner(text="Fetching Your Coordinates..."):
     my_lat = g.latlng[0]
     my_lon = g.latlng[1]
     
-st.header('Enter coordinates of your starting point')
+st.subheader('Enter coordinates of your starting point')
 coord = "13.945281,77.7364"
 coordinate = st.text_area("Enter latitude and longitude separated by a comma. Eg: 13.945281,77.7364 ", coord, height=25)
 coordinates=coord.split(',')
@@ -128,7 +125,7 @@ elif selected_view=='Blacklisted':
 
 
 if selected_view=='Minimal Route Finder':
-    st.header('Enter the number of trips per day you want')
+    st.subheader('Enter the number of trips per day you want')
     tpd = 12
     num = int(st.text_area("trips per day", tpd, height=25))
     
@@ -238,6 +235,8 @@ if selected_view=='Minimal Route Finder':
     #day=2
     st.header('OUTPUT (The Minimum Route)')
     st.subheader(str(len(df_selected_type))+ " stores found.")
+    if(len(df_selected_type)==0):
+        st.subheader('Please Add/Change the type of store you want to visit.')
     if(len(df_selected_type)>0):
             display = pd.DataFrame()
 
@@ -276,7 +275,7 @@ if selected_view=='Minimal Route Finder':
                 elif df['id'][k] in st.session_state.Bindex:
                     df['Blacklisted'][k]=1
             st.subheader("""
-             Scroll Up to update and save your progress !
+             Click on Update Sheet to save your progress !
 
                  """)
 
