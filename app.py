@@ -79,9 +79,9 @@ def filedownload(df,filename):
     href = f'<a href="data:file/csv;base64,{b64}" download={filename}>Download CSV File</a>'
     return href
 
-st.sidebar.write('Click Below if you want to reset all your progress.')
-if st.sidebar.button('Reset'):
-    reset_data()
+#st.sidebar.write('Click Below if you want to reset all your progress.')
+#if st.sidebar.button('Reset'):
+#    reset_data()
 
 st.sidebar.write("Click below if you have confirmed all your trips.")
 
