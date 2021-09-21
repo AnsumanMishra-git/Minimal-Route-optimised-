@@ -34,7 +34,7 @@ creds = service_account.Credentials.from_service_account_info(
 )
 
 client = gspread.authorize(creds)
-sheet = client.open('MERGED').sheet1
+sheet = client.open('MERGED_NEW').sheet1
 
 if "Bindex" not in st.session_state:
         st.session_state.Bindex=[]
